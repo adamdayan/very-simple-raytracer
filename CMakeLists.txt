@@ -14,5 +14,4 @@ add_compile_options(-Wunused-variable) # Variable is defined but unused
 set(PROJECT_BINARY_DIR out/)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
-
-add_executable(ppm_writer utils/ppm_writer.cpp)
+add_subdirectory(src)
