@@ -63,7 +63,6 @@ class Vec3 {
       return x()*x() + y()*y() + z()*z();
     }
 
-    Vec3 unit_vector();
 
   private:
     double nums[3];
@@ -98,7 +97,13 @@ inline Vec3 operator*(const double m, const Vec3& v) {
 }
 
 inline Vec3 operator/(const Vec3& v, const double d) {
-  return Vec3(v.x() / d, v.y() / d, v.z() / d);
+  return 1/d * v;
+}
+
+
+// scale vector between [-1, 1]
+inline Vec3 unit_vector(const Vec3& v) {
+  return v / v.length();
 }
 
 inline double dot(const Vec3& v1, const Vec3& v2) {
