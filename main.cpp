@@ -4,16 +4,34 @@
 #include "colour.h"
 #include "ray.h"
 
+bool hit_sphere(const Ray& r, const Point3& sphere_center, double sphere_radius) {
+  Vec3 a_minus_c = r.origin() - sphere_center;
+  double a = dot(r.direction(), r.direction());
+  double b = 2.0 * dot(a_minus_c, r.direction());
+  double c = dot(a_minus_c, a_minus_c) - sphere_radius*sphere_radius;
+
+  double discriminant = b*b - 4*a*c;
+
+  return (discriminant >= 0);
+}
+
+
 // just a stub atm
-Colour ray_colour(const Ray& r, int i) {
+Colour ray_colour(const Ray& r) {
   Vec3 unit_dir = unit_vector(r.direction());
 
   // scales y [0,1]
   double a = 0.5*(unit_dir.y() + 1.0);
   
-  // linearly interpolates between white and blue
-  Colour lerp = (1.0-a)*Colour(1.0, 1.0, 1.0) + a*Colour(0, 0, 1.0);
-  return lerp;
+  Colour c;
+  if (hit_sphere(r, Point3(0,0,-1.0), 0.5)) {
+    c = Colour(1.0, 0, 0);
+  } else {
+    // linearly interpolates between white and blue
+    c = (1.0-a)*Colour(1.0, 1.0, 1.0) + a*Colour(0, 0, 1.0);
+  }
+
+  return c;
 }
 
 int main() {
@@ -57,7 +75,7 @@ int main() {
           Vec3 ray_direction = cur_pixel - camera_center;
           Ray r(camera_center, ray_direction);
 
-          Colour colour = ray_colour(r, i);
+          Colour colour = ray_colour(r);
           write_colour(std::cout, colour);
       }
   }
