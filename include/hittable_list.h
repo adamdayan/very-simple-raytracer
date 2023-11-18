@@ -6,7 +6,7 @@
 
 #include "hittable.h"
 
-class HittableList : Hittable {
+class HittableList : public Hittable {
   public:
     HittableList() {}
     HittableList(const std::vector<std::shared_ptr<Hittable>>& hittables) : hittables(hittables) {} // NOTE: work out why this doesn't work :(

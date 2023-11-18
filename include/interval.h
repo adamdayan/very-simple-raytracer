@@ -16,6 +16,12 @@ class Interval {
       return min < val && val < max;
     }
 
+    double clamp(double val) const {
+      if (val < min) return min;
+      if (val > max) return max;
+      return val;
+    }
+
     static const Interval empty, universe;
 
     double min;
