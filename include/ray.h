@@ -10,7 +10,7 @@ class Ray {
     Point3 origin() const { return orig; }
     Point3 direction() const { return dir; }
 
-    Point3 at(double t) { return orig + (t * dir); }
+    Point3 at(double t) const { return orig + (t * dir); }
 
   private:
     Point3 orig;

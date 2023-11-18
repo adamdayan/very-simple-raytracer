@@ -1,37 +1,26 @@
 #include <iostream>
 #include <cmath>
 
+#include "simple_raytracer.h"
 #include "colour.h"
 #include "ray.h"
-
-bool hit_sphere(const Ray& r, const Point3& sphere_center, double sphere_radius) {
-  Vec3 a_minus_c = r.origin() - sphere_center;
-  double a = dot(r.direction(), r.direction());
-  double b = 2.0 * dot(a_minus_c, r.direction());
-  double c = dot(a_minus_c, a_minus_c) - sphere_radius*sphere_radius;
-
-  double discriminant = b*b - 4*a*c;
-
-  return (discriminant >= 0);
-}
-
+#include "hittable_list.h"
+#include "sphere.h"
+#include "interval.h"
 
 // just a stub atm
-Colour ray_colour(const Ray& r) {
-  Vec3 unit_dir = unit_vector(r.direction());
+Colour ray_colour(const Ray& r, const HittableList& scene) {
 
-  // scales y [0,1]
-  double a = 0.5*(unit_dir.y() + 1.0);
-  
-  Colour c;
-  if (hit_sphere(r, Point3(0,0,-1.0), 0.5)) {
-    c = Colour(1.0, 0, 0);
-  } else {
-    // linearly interpolates between white and blue
-    c = (1.0-a)*Colour(1.0, 1.0, 1.0) + a*Colour(0, 0, 1.0);
+  HitRecord rec;
+  bool is_hit = scene.hit(r,Interval(0, infinity), rec);
+
+  if (is_hit) {
+    return Colour(0.5*(rec.normal + 1.0));
   }
 
-  return c;
+  Vec3 unit_dir = unit_vector(r.direction());
+  double a = 0.5*(unit_dir.y() + 1.0);
+  return (1.0-a) * Colour(1.0, 1.0, 1.0) + a*Colour(0, 0, 1.0);
 }
 
 int main() {
@@ -60,6 +49,12 @@ int main() {
   Point3 viewport_upper_left = camera_center - Vec3{0,0, focal_length} - viewport_v/2 - viewport_u/2; 
   Point3 pixel_00_loc = viewport_upper_left - 0.5 * (pixel_spacing_u + pixel_spacing_v);
 
+  // setup scene
+  HittableList scene({
+    std::make_shared<Sphere>(Point3(0,0,-1), 0.5),
+    std::make_shared<Sphere>(Point3(0,-100.5, -1), 100) 
+  });
+
   // .ppm standard metadata 
   int max_colour = 255;
   std::cout << "P3" << std::endl;
@@ -75,7 +70,7 @@ int main() {
           Vec3 ray_direction = cur_pixel - camera_center;
           Ray r(camera_center, ray_direction);
 
-          Colour colour = ray_colour(r);
+          Colour colour = ray_colour(r, scene);
           write_colour(std::cout, colour);
       }
   }
