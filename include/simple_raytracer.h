@@ -20,14 +20,14 @@ inline double degress_to_radians(double degrees) {
 // random double [0,1]
 double random_double(int seed=100) {
   static std::uniform_real_distribution<double> unif(0.0, 1.0);
-  static std::default_random_engine re(seed);      
+  static std::mt19937 re(seed);      
   return unif(re);
 }
 
 // random double [lower, upper]
 double random_double(double lower, double upper, int seed=100) {
   static std::uniform_real_distribution<double> unif(lower, upper);
-  static std::default_random_engine re(seed);      
+  static std::mt19937 re(seed);      
   return unif(re);
 }
 

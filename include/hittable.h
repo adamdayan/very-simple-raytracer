@@ -4,6 +4,8 @@
 #include "ray.h"
 #include "interval.h"
 
+class Material;
+
 // contains information about where a Ray hit a Hittable
 class HitRecord {
   public:
@@ -15,10 +17,12 @@ class HitRecord {
     double t;
     // did the ray arrive from inside the Hittable or outside
     bool front_face = false;
+    // what material was hit
+    std::shared_ptr<Material> mat;
 
 
     void set_face_normal(const Ray& r, const Vec3& r_normal) {
-      if (dot(r.direction(), normal) > 0.0) {
+      if (dot(r.direction(), r_normal) >= 0.0) {
         normal = -r_normal;
         front_face = false;
       } else {

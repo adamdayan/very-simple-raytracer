@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cmath>
 
+#include "simple_raytracer.h"
+
 class Vec3 {
   // class to hold sets of related 3 nums - will usually be 3d coordinates or colours
   public:
@@ -22,14 +24,15 @@ class Vec3 {
         return nums[2];
     }
 
+    bool near_zero() const {
+      double e = 1e-8;
+      return (fabs(x()) < e) && (fabs(y()) < e) && (fabs(z() < e));
+    }
+
     Vec3 operator-() const { return Vec3(-nums[0], -nums[1], -nums[2]); }
 
     double operator[](int i) const { return nums[i]; }
     double& operator[](int i) { return nums[i]; }
-
-    Vec3 operator*(Vec3 m) const {
-      return Vec3(x() * m.x(), y() * m.y(), z() * m.z());
-    };
 
     Vec3& operator+=(const Vec3 v) {
       nums[0] += v.x();
@@ -61,6 +64,14 @@ class Vec3 {
 
     double length_squared() const {
       return x()*x() + y()*y() + z()*z();
+    }
+
+    static Vec3 random() {
+      return Vec3(random_double(), random_double(), random_double());
+    }
+
+    static Vec3 random(double min, double max) {
+      return Vec3(random_double(min, max), random_double(min, max), random_double(min, max));
     }
 
 
@@ -108,8 +119,7 @@ inline Vec3 operator/(const Vec3& v, const double d) {
   return 1/d * v;
 }
 
-
-// scale vector between [-1, 1]
+// make vector's length 1
 inline Vec3 unit_vector(const Vec3& v) {
   return v / v.length();
 }
@@ -124,6 +134,40 @@ inline Vec3 cross(const Vec3& v1, const Vec3& v2) {
     v1.z() * v2.x() - v1.x() * v2.z(),
     v1.x() * v2.y() - v1.y() * v2.x()
   );
+}
+
+inline Vec3 random_in_unit_sphere() {
+  while (true) {
+    Vec3 rv = Vec3::random(-1, 1);
+    // NOTE: don't understand why below isn't be rv.length()?? The radius of the sphere should be 1 - don't we want the vector's length
+    // NOTE: possible answer - it doesn't matter, anything with length() <= 1 will have a length()**2 <= 1
+    if (rv.length_squared() < 1.0) { 
+      return rv;
+    }
+  }
+}
+
+inline Vec3 random_unit_vector() {
+  return unit_vector(random_in_unit_sphere());
+}
+
+inline Vec3 random_unit_vector_in_hemisphere(const Vec3& normal) {
+  Vec3 ruv = random_unit_vector();
+  if (dot(ruv, normal) < 0.0)
+    return -ruv;
+  return ruv;
+}
+
+inline Vec3 compute_reflection(const Vec3& v, const Vec3& normal) {
+  // NOTE: I think the final multiplication by n is just normalise but not 100% sure
+  return v - 2*dot(v, normal)*normal;
+}
+
+inline Vec3 compute_refraction(const Vec3& r_in, const Vec3& normal_in, double refraction_ratio) {
+  double cos_theta = std::min(dot(-r_in, normal_in), 1.0);
+  Vec3 r_perp = refraction_ratio * (r_in + cos_theta * normal_in);
+  Vec3 r_parr = -sqrt(std::abs(1.0-r_perp.length_squared())) * normal_in;
+  return r_perp + r_parr;
 }
 
 #endif // VEC3_H

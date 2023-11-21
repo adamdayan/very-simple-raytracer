@@ -19,10 +19,19 @@ int main() {
   cam.initialise();
 
   // setup scene
-  HittableList scene({
-    std::make_shared<Sphere>(Point3(0,0,-1), 0.5),
-    std::make_shared<Sphere>(Point3(0,-100.5, -1), 100) 
-  });
+  HittableList scene;  
+  
+  std::shared_ptr<Material> material_ground = std::make_shared<Lambertian>(Colour(0.8, 0.8, 0.0));
+  // std::shared_ptr<Material> material_center = std::make_shared<Lambertian>(Colour(0.7, 0.3, 0.3));
+  // std::shared_ptr<Material> material_left = std::make_shared<Metal>(Colour(0.8, 0.8, 0.8), 0.3);
+  std::shared_ptr<Material> material_center = std::make_shared<Dieletric>(1.5);
+  std::shared_ptr<Material> material_left = std::make_shared<Dieletric>(1.5);
+  std::shared_ptr<Material> material_right = std::make_shared<Metal>(Colour(0.8, 0.6, 0.2), 1.0);
+
+  scene.add(std::make_shared<Sphere>(Point3(0.0, -100.5, -1.0), 100.0, material_ground));
+  scene.add(std::make_shared<Sphere>(Point3(0.0, 0.0, -1.0), 0.5, material_center));
+  scene.add(std::make_shared<Sphere>(Point3(-1.0, 0.0, -1.0), 0.5, material_left));
+  scene.add(std::make_shared<Sphere>(Point3(1.0, 0.0, -1.0), 0.5, material_right));
 
   // .ppm standard metadata 
   int max_colour = 255;

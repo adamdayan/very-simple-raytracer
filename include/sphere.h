@@ -5,7 +5,7 @@
 
 class Sphere : public Hittable {
   public:
-    Sphere(const Point3& center, double radius) : center(center), radius(radius) {}
+    Sphere(const Point3& center, double radius, std::shared_ptr<Material> mat) : center(center), radius(radius), mat(mat) {}
     ~Sphere() = default;
 
     bool hit(const Ray &r, const Interval& t_interval, HitRecord& rec) const override {
@@ -23,9 +23,9 @@ class Sphere : public Hittable {
 
       double possible_t = (-half_b - sqrt(discriminant)) / a;
       // check that t doesn't exceed min and max values
-      if (!t_interval.contains(possible_t)) {
+      if (!t_interval.surrounds(possible_t)) {
         possible_t = (-half_b + sqrt(discriminant)) / a;
-        if (!t_interval.contains(possible_t)) {
+        if (!t_interval.surrounds(possible_t)) {
           return false;
         }
       }
@@ -33,6 +33,7 @@ class Sphere : public Hittable {
       rec.t = possible_t; 
       rec.p = r.at(rec.t);
       rec.set_face_normal(r, (rec.p - center) / radius); // dividing by radius to make normal a unit vector
+      rec.mat = mat;
 
       return true;
     }
@@ -40,6 +41,7 @@ class Sphere : public Hittable {
   private:
     Point3 center;
     double radius;
+    std::shared_ptr<Material> mat;
 };
 
 

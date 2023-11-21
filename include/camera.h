@@ -4,6 +4,7 @@
 #include "hittable.h"
 #include "colour.h"
 #include "vec3.h"
+#include "material.h"
 
 class Camera {
   public:
@@ -33,17 +34,26 @@ class Camera {
     }
 
     // given a ray and a scene, what colour does the ray produce
-    Colour get_ray_colour(const Ray& r, const Hittable& scene) const {
+    Colour get_ray_colour(const Ray& r, const Hittable& scene, int depth) const {
+      if (depth == max_depth) {
+        return Colour(0,0,0);
+      }
       HitRecord rec;
-      bool is_hit = scene.hit(r,Interval(0, infinity), rec);
+      bool is_hit = scene.hit(r,Interval(0.001, infinity), rec);
 
       if (is_hit) {
-        return Colour(0.5*(rec.normal + 1.0));
+        // ray bounces off in random (hemispheral) direction and loses 50% of its colour
+        Ray scattered = Ray();
+        Colour attenuation;
+        if (rec.mat->scatter(r, rec, attenuation, scattered)) {
+          return attenuation * get_ray_colour(scattered, scene, ++depth);
+        }
+        return Colour(0,0,0);
       }
 
       Vec3 unit_dir = unit_vector(r.direction());
       double a = 0.5*(unit_dir.y() + 1.0);
-      return (1.0-a) * Colour(1.0, 1.0, 1.0) + a*Colour(0, 0, 1.0);
+      return (1.0-a) * Colour(1.0, 1.0, 1.0) + a*Colour(0.5, 0.7, 1.0);
     }
 
     Ray get_ray(int pixel_row, int pixel_column) {
@@ -66,7 +76,7 @@ class Camera {
             Colour colour(0,0,0);
             for (int n = 0; n < n_samples; n++) {
               Ray r = get_ray(i, j);
-              colour += get_ray_colour(r, scene);
+              colour += get_ray_colour(r, scene, 0);
             }
             write_colour(std::cout, colour, n_samples);
         }
@@ -85,11 +95,14 @@ class Camera {
     }
 
 
-    double aspect_ratio;
-    double focal_length;
-    int image_width;
-    int image_height; 
-    int n_samples = 10;
+    double aspect_ratio; // image width over height
+    double focal_length; // distance of camera from viewboard
+    int image_width; // Rendered image width in pizels
+    int image_height;  // Rendered image height in pixels, solved for using given aspect_ratio and width
+
+    int n_samples = 100;
+    int max_depth = 50; // max number of ray bounces into scene
+
     Point3 pixel_00_loc;
     Vec3 pixel_spacing_v;
     Vec3 pixel_spacing_u;
