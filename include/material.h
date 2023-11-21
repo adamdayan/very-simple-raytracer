@@ -57,9 +57,27 @@ class Dieletric : public Material {
     bool scatter(const Ray& r_in, const HitRecord& rec, Colour& colour, Ray& r_out) const override {
       colour = Colour(1.0, 1.0, 1.0);
       double refraction_ratio = rec.front_face ? 1.0/ir : ir; // NOTE: how do we know the refractive index of the other material is 1.0? Are we assuming ray always enters from "vacum"?
-      Vec3 refraction_direction = compute_refraction(unit_vector(r_in.direction()), rec.normal, refraction_ratio);
-      r_out = Ray(rec.p, refraction_direction);
+
+      double cos_theta = std::min(dot(-r_in.direction(), rec.normal), 1.0);
+      double sin_theta = sqrt(1 - cos_theta * cos_theta);
+
+      // can refract 
+      if (refraction_ratio * sin_theta <= 1.0 || reflectance(cos_theta, refraction_ratio) > random_double()) { // don't really understand why we want to introduce randomness
+        Vec3 refraction_direction = compute_refraction(unit_vector(r_in.direction()), rec.normal, refraction_ratio);
+        r_out = Ray(rec.p, refraction_direction);
+      } else {
+        // must reflect
+        Vec3 reflection_direction = compute_reflection(unit_vector(r_in.direction()), rec.normal);
+        r_out = Ray(rec.p, reflection_direction);
+      }
       return true;
+    }
+
+    // Schlick's approximation for reflectance
+    double reflectance(double cosine, double ref_idx) const { 
+      double r0 = (1-ref_idx) / (1+ref_idx);
+      r0 = r0*r0;
+      return r0 + (1-r0)*pow((1 - cosine), 5);
     }
 
   private:
