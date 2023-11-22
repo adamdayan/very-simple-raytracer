@@ -147,6 +147,15 @@ inline Vec3 random_in_unit_sphere() {
   }
 }
 
+inline Vec3 random_in_unit_disc() {
+  while (true) {
+    Vec3 rv = Vec3(random_double(-1, 1), random_double(-1, 1), 0);
+    if (rv.length_squared() < 1.0) { 
+      return rv;
+    }
+  }
+}
+
 inline Vec3 random_unit_vector() {
   return unit_vector(random_in_unit_sphere());
 }

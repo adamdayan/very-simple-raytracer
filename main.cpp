@@ -14,8 +14,8 @@ int main() {
   // setup camera
   float aspect_ratio = 16.0 / 9.0;
   int image_width = 400;
-  double focal_length = 1.0;
-  Camera cam(aspect_ratio, focal_length, image_width);
+  CameraOrientation cam_orient{ Point3(-2,2,1), Point3(0,0,-1), Point3(0,1,0) };
+  Camera cam(aspect_ratio, image_width, 20, cam_orient, 10.0, 3.4);
   cam.initialise();
 
   // setup scene
