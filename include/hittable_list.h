@@ -22,7 +22,7 @@ class HittableList : public Hittable {
 
     bool hit(const Ray& r, const Interval& t_interval, HitRecord& rec) const override {
       double cur_min_t = t_interval.max;
-      HitRecord cur_rec;
+      HitRecord cur_rec{};
       bool is_hit = false;
 
       for (const auto& hittable : hittables) {
