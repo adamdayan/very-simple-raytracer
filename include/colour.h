@@ -6,11 +6,11 @@
 
 using Colour = Vec3;
 
-void write_colour(std::ostream& out, const Colour& pixel_colour, int n_samples, int gamma = 2) {
+void write_colour(std::ostream& out, const Colour& pixel_colour, int gamma = 2) {
     // average together the samples
-    double r = pixel_colour.x() / n_samples;
-    double g = pixel_colour.y() / n_samples;
-    double b = pixel_colour.z() / n_samples;
+    double r = pixel_colour.x();
+    double g = pixel_colour.y();
+    double b = pixel_colour.z();
 
     // apply the linear -> gamma transform
     r = std::pow(r, 1.0/gamma);

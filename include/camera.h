@@ -2,6 +2,8 @@
 #define CAMERA_H
 
 #include <cmath>
+#include <mutex>
+#include <thread>
 
 #include "hittable.h"
 #include "colour.h"
@@ -16,8 +18,8 @@ struct CameraOrientation {
 
 class Camera {
   public:
-    Camera(double aspect_ratio, int image_width, double fov, const CameraOrientation&  orient, double defocus_angle, double focus_dist) : 
-      aspect_ratio(aspect_ratio), image_width(image_width), fov(fov), orient(orient), defocus_angle(defocus_angle), focus_dist(focus_dist) {}
+    Camera(double aspect_ratio, int image_width, double fov, const CameraOrientation&  orient, double defocus_angle, double focus_dist, int n_threads) : 
+      aspect_ratio(aspect_ratio), image_width(image_width), fov(fov), orient(orient), defocus_angle(defocus_angle), focus_dist(focus_dist), n_threads(n_threads) {}
 
     void initialise() {
       image_height = static_cast<int>(image_width / aspect_ratio);
@@ -90,20 +92,47 @@ class Camera {
 
     // given scene and camera info, renders every pixel
     void render(const Hittable& scene) {
-      Colour colour;
-      // for each row
-      for (int i = 0; i < image_height; i++) {
-        std::clog << "\nScanlines remaining: " << (image_height - i) << " " << std::flush;
-        // for each column
-        for (int j = 0; j < image_width; j++) {
-            // for each sample
-            Colour colour(0,0,0);
-            for (int n = 0; n < n_samples; n++) {
-              Ray r = get_ray(i, j);
-              colour += get_ray_colour(r, scene, 0);
-            }
-            write_colour(std::cout, colour, n_samples);
+      Colour* buf = new Colour[image_height * image_width];
+      std::vector<std::thread> threads;
+      // start all our threads
+      for (int t = 0; t < n_threads; t++) {
+        threads.push_back(std::thread(&Camera::per_thread_render, this, std::ref(scene), buf, t));
+      }
+      // block until the threads are finished
+      for (auto& t : threads) {
+        t.join();
+      } 
+      // write our colour buffer to stdout
+      for (int p = 0; p < image_height*image_width; p++) {
+        write_colour(std::cout, buf[p], 2);
+      }
+      return;
+   }
+
+    void per_thread_render(const Hittable& scene, Colour* buf, int thread_id) {
+      while (true) {
+        pixel_cntr_lock.lock();
+        int cur_pixel = pixel_cntr++;
+        pixel_cntr_lock.unlock();
+
+        // return once we have rendered every pixel
+        if (cur_pixel >= image_height*image_width) {
+          return;
         }
+
+        int i = cur_pixel / image_width;
+        int j = cur_pixel % image_width;
+
+        if (cur_pixel % image_width == 0) {
+          std::clog << "Thread " << thread_id << " completed. " << "Scanlines remaining: " << (image_height - i) << " " << std::endl;
+        }
+
+        Colour colour(0,0,0);
+        for (int s = 0; s < n_samples; s++) {
+          Ray r = get_ray(i, j);
+          colour += get_ray_colour(r, scene, 0);
+        }
+        buf[cur_pixel] = colour / n_samples;
       }
     }
 
@@ -125,14 +154,14 @@ class Camera {
 
 
     double aspect_ratio; // image width over height
-    int image_width; // Rendered image width in pizels
+    int image_width; // Rendered image width in pixels
     int image_height;  // Rendered image height in pixels, solved for using given aspect_ratio and width
     double fov;
 
     CameraOrientation orient;
     Vec3 u, v, w; // camera frame basis vectors
 
-    int n_samples = 100;
+    int n_samples = 100; // number of samples per pixel
     int max_depth = 50; // max number of ray bounces into scene
 
     Point3 pixel_00_loc; // 0th pixel coords in global frame
@@ -145,6 +174,10 @@ class Camera {
     Vec3 defocus_disc_v;  // defocus disc vertical radius
     Vec3 defocus_disc_u; // defocus disc horizontal radius
 
+    int n_threads;
+
+    int pixel_cntr = 0;
+    std::mutex pixel_cntr_lock;
 };
 
 #endif // CAMERA_H
